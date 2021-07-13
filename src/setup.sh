@@ -7,6 +7,7 @@ SSH_KEY=""
 SSH_PUB=""
 GIT_USER=""
 GIT_EMAIL=""
+GIT_TOKEN=""
 SIGNKEY=""
 
 # check if we have options
@@ -108,6 +109,22 @@ while :; do
     echo 'ERROR: "--git-email" requires a non-empty option argument.'
     exit 1
     ;;
+  --git-token) # Takes an option argument; ensure it has been specified.
+    if [ "$2" ]; then
+      GIT_TOKEN=$2
+      shift
+    else
+      echo 'ERROR: "--git-token" requires a non-empty option argument.'
+      exit 1
+    fi
+    ;;
+  --git-token=?*)
+    GIT_TOKEN=${1#*=} # Delete everything up to "=" and assign the remainder.
+    ;;
+  --git-token=) # Handle the case of an empty --git-token=
+    echo 'ERROR: "--git-token" requires a non-empty option argument.'
+    exit 1
+    ;;
   *) # Default case: No more options, so break out of the loop.
     break ;;
   esac
@@ -148,6 +165,13 @@ if [ -z "${SSH_PUB}" ]; then
   echo >&2 "The SSH_PUB is not set. Aborting."
   exit 1
 fi
+
+# create a github config folder
+mkdir -p ~/.github
+# set the github personal access token for use in github CLI
+# this can be an empty value as we don't always need this
+echo "${GIT_TOKEN}" >~/.github/personal.access.token
+chmod 400 ~/.github/personal.access.token
 
 # move the keys into place (check the type!)
 echo "${SSH_KEY}" >~/.ssh/id_ed25519
