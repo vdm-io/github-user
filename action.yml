@@ -1,0 +1,81 @@
+name: 'Setup Git User'
+description: 'Configure Git with GPG signing, SSH keys, and optional GitHub token for automated CI/CD environments.'
+author: 'Llewellyn van der Merwe'
+
+branding:
+  icon: 'git-commit'
+  color: 'gray-dark'
+
+inputs:
+  gpg-key:
+    description: 'ASCII-armored GPG private key for commit/tag signing'
+    required: true
+  gpg-user:
+    description: 'GPG user ID (name or email) to locate the signing key'
+    required: true
+  ssh-key:
+    description: 'SSH private key content for git push/pull'
+    required: true
+  ssh-pub:
+    description: 'SSH public key content (must match the private key)'
+    required: true
+  git-user:
+    description: 'Git commit author name'
+    required: true
+  git-email:
+    description: 'Git commit author email'
+    required: true
+  git-token:
+    description: 'GitHub personal access token (stored for CLI use)'
+    required: false
+    default: ''
+  ssh-type:
+    description: 'SSH key type: ed25519, rsa, or ecdsa'
+    required: false
+    default: 'ed25519'
+  ssh-host:
+    description: 'SSH host to configure (e.g. github.com, gitlab.com)'
+    required: false
+    default: 'github.com'
+  force:
+    description: 'Overwrite an existing configuration for a different user'
+    required: false
+    default: 'false'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup Git User
+      shell: bash
+      env:
+        INPUT_GPG_KEY: ${{ inputs.gpg-key }}
+        INPUT_GPG_USER: ${{ inputs.gpg-user }}
+        INPUT_SSH_KEY: ${{ inputs.ssh-key }}
+        INPUT_SSH_PUB: ${{ inputs.ssh-pub }}
+        INPUT_GIT_USER: ${{ inputs.git-user }}
+        INPUT_GIT_EMAIL: ${{ inputs.git-email }}
+        INPUT_GIT_TOKEN: ${{ inputs.git-token }}
+        INPUT_SSH_TYPE: ${{ inputs.ssh-type }}
+        INPUT_SSH_HOST: ${{ inputs.ssh-host }}
+        INPUT_FORCE: ${{ inputs.force }}
+      run: |
+        chmod +x "${GITHUB_ACTION_PATH}/src/setup.sh"
+
+        # Build the argument list. Required args are always passed.
+        # Optional args are only passed when non-empty, so the action
+        # works with both the original and updated versions of setup.sh.
+        args=(
+          --gpg-key "${INPUT_GPG_KEY}"
+          --gpg-user "${INPUT_GPG_USER}"
+          --ssh-key "${INPUT_SSH_KEY}"
+          --ssh-pub "${INPUT_SSH_PUB}"
+          --git-user "${INPUT_GIT_USER}"
+          --git-email "${INPUT_GIT_EMAIL}"
+        )
+
+        [[ -n "${INPUT_GIT_TOKEN}" ]] && args+=(--git-token "${INPUT_GIT_TOKEN}")
+        [[ -n "${INPUT_SSH_TYPE}" ]]  && args+=(--ssh-type "${INPUT_SSH_TYPE}")
+        [[ -n "${INPUT_SSH_HOST}" ]]  && args+=(--ssh-host "${INPUT_SSH_HOST}")
+        [[ "${INPUT_FORCE}" == "true" ]] && args+=(--force)
+
+        "${GITHUB_ACTION_PATH}/src/setup.sh" "${args[@]}"

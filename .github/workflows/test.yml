@@ -1,0 +1,20 @@
+name: Test Setup Script V2
+
+on:
+  push:
+    branches: [v2]
+  pull_request:
+    branches: [v2]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run test suite V2
+        run: |
+          chmod +x src/setup.sh tests/test-setup-git.sh
+          bash tests/test-setup-git.sh ./src/setup.sh
